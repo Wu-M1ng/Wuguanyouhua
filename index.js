@@ -252,7 +252,8 @@
         floatingWindowImage: '#my-topbar-test-floating-image',
 
         templateApplyButton: '.my-topbar-test-template-apply',
-        menuBtns: '.my-topbar-test-menu-btn' // 新增菜单按钮统称
+        menuBtns: '.my-topbar-test-menu-btn',
+        processingStatus: '#my-topbar-test-processing-status'
     });
 
     let initialized = false;
@@ -2611,6 +2612,19 @@
 
     function handleGenerationEnded() {
         queueAutoTriggerFlow();
+    }
+
+    /**
+     * 更新处理状态显示
+     * @param {boolean} isProcessing 
+     */
+    function updateProcessingStatus(isProcessing) {
+        const $status = $(SELECTORS.processingStatus);
+        if (isProcessing) {
+            $status.fadeIn(200);
+        } else {
+            $status.fadeOut(200);
+        }
     }
 
     // 显示/隐藏全屏面板

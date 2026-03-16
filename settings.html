@@ -1,4 +1,6 @@
 <div id="my-topbar-test-panel" class="my-topbar-test-fullscreen-overlay" style="display: none;">
+    <!-- 背景装饰光晕 -->
+    <div class="my-topbar-test-bg-glow"></div>
     <div class="my-topbar-test-container">
         <!-- 关闭按钮 -->
         <div id="my-topbar-test-close-btn" class="my-topbar-test-close-btn" title="关闭面板">
@@ -71,10 +73,10 @@
             <!-- 范围设置 -->
             <div id="my-topbar-test-range-settings" class="my-topbar-test-settings-section">
                 <label for="my-topbar-test-keep-tags" class="my-topbar-test-keep-tags-row">
+                    <span class="my-topbar-test-keep-tags-text">保留标签</span>
                     <input id="my-topbar-test-keep-tags"
                            class="my-topbar-test-keep-tags-checkbox"
                            type="checkbox">
-                    <span class="my-topbar-test-keep-tags-text">保留标签</span>
                 </label>
 
                 <label for="my-topbar-test-only-replace-in-tags" class="my-topbar-test-keep-tags-row my-topbar-test-only-replace-row">
@@ -250,25 +252,29 @@
 
                 <div class="my-topbar-test-capture-send-options">
                     <label for="my-topbar-test-auto-trigger-enabled" class="my-topbar-test-keep-tags-row">
+                        <span class="my-topbar-test-keep-tags-text">开启自动触发</span>
                         <input id="my-topbar-test-auto-trigger-enabled"
                                class="my-topbar-test-keep-tags-checkbox"
                                type="checkbox">
-                        <span class="my-topbar-test-keep-tags-text">开启自动触发</span>
                     </label>
 
                     <label for="my-topbar-test-skip-reply-confirm" class="my-topbar-test-keep-tags-row">
+                        <span class="my-topbar-test-keep-tags-text">跳过确认</span>
                         <input id="my-topbar-test-skip-reply-confirm"
                                class="my-topbar-test-keep-tags-checkbox"
                                type="checkbox">
-                        <span class="my-topbar-test-keep-tags-text">跳过确认</span>
                     </label>
 
                     <label for="my-topbar-test-seamless-hijack" class="my-topbar-test-keep-tags-row">
+                        <span class="my-topbar-test-keep-tags-text">无感优化</span>
                         <input id="my-topbar-test-seamless-hijack"
                                class="my-topbar-test-keep-tags-checkbox"
                                type="checkbox">
-                        <span class="my-topbar-test-keep-tags-text">无感优化</span>
                     </label>
+                </div>
+
+                <div id="my-topbar-test-processing-status" class="my-topbar-test-processing-status" style="display: none;">
+                    <i class="fa-solid fa-spinner fa-spin"></i> 正在进行无感优化中，请稍候...
                 </div>
 
                 <div class="my-topbar-test-capture-send-actions">
