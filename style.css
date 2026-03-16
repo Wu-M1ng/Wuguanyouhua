@@ -43,13 +43,32 @@
 }
 
 #my-topbar-test-button.is-spinning .my-topbar-test-button-letter {
-    animation: my-topbar-spin 2s linear infinite;
-    color: var(--SmartThemeQuoteColor, #00ffcc);
+    animation: my-topbar-spin 1.8s linear infinite;
+    color: #00ffff;
+    text-shadow: 0 0 16px rgba(0, 255, 255, 0.9);
+    /* Isolation fix: use absolute positioning so the spinning letter
+       does NOT affect document flow and cause parent/page jitter. */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform-origin: center center;
+    /* translateXY centering must not be overridden by keyframe - use margin instead */
+    margin-top: -0.55em;
+    margin-left: -0.45em;
+}
+
+/* Stable placeholder to keep button size constant during spin */
+#my-topbar-test-button.is-spinning::before {
+    content: 'H';
+    visibility: hidden;
+    font-size: 22px;
+    font-weight: 900;
+    pointer-events: none;
 }
 
 @keyframes my-topbar-spin {
     from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    to   { transform: rotate(360deg); }
 }
 
 /* 全屏遮罩层 */

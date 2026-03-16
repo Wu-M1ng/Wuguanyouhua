@@ -95,7 +95,7 @@
         keepTags: false,
         onlyReplaceInTags: false,
         skipReplyConfirm: true,
-        seamlessHijack: true,
+        seamlessHijack: false,
         startTag: '',
         endTag: '',
         templatePresets: Object.freeze([]),
@@ -276,13 +276,22 @@
         feedbackText: '',
     };
 
+    let autoTriggerState = {
+        enabledChatId: '',
+        isBusy: false,
+        requestId: 0,
+        stopRequested: false,
+        stoppedByUser: false,
+        pendingTimerId: 0,
+    };
     let templateDeleteConfirmState = {
         skipForSession: false,
     };
     let templatePresetDrawerOpen = false;
     // 已经过无感拦截优化的消息 index 集合，用于跳过 queueAutoTriggerFlow 的二次触发
     const seamlessOptimizedMessageIds = new Set();
-    let seamlessAbortController = null;
+    // 用于支持"停止无感优化"按钮的取消标志
+    let seamlessCancelRequested = false;
     let templateSortState = {
         timerId: 0,
         pointerId: null,
@@ -771,9 +780,18 @@
         const $button = $(SELECTORS.button);
         if (isProcessing) {
             $status.css('display', 'inline-flex');
+            $button.addClass('is-spinning');
         } else {
             $status.hide();
+            $button.removeClass('is-spinning');
         }
+    }
+
+    function isAutoFlowActive() {
+        const isAutoConfirmVisible = $(SELECTORS.replyModal).is(':visible')
+            && String(replyModalState.source ?? '') === 'auto';
+
+        return autoTriggerState.isBusy || Boolean(autoTriggerState.pendingTimerId) || isAutoConfirmVisible;
     }
 
     function getFloatingWindowConfig() {
@@ -2099,11 +2117,28 @@
             }
             hideReplyModal();
         }
+
+        autoTriggerState.requestId += 1;
+        autoTriggerState.isBusy = false;
+        autoTriggerState.stopRequested = false;
+        autoTriggerState.stoppedByUser = false;
+
+        if (autoTriggerState.pendingTimerId) {
+            window.clearTimeout(autoTriggerState.pendingTimerId);
+            autoTriggerState.pendingTimerId = 0;
+        }
+
+        syncAutoTriggerStateFromCurrentChat();
+        syncAutoTriggerUiState();
     }
 
     function stopManualFlow() {
         const isReplyModalVisible = $(SELECTORS.replyModal).is(':visible');
         const replySource = String(replyModalState.source ?? '');
+        if (isAutoFlowActive()) {
+            showMessage('warning', '当前正在进行自动触发');
+            return;
+        }
 
         const isSending = manualSendState.isBusy;
         const isManualConfirmVisible = isReplyModalVisible && replySource === 'manual';
@@ -2139,7 +2174,42 @@
         }
     }
 
+    function stopAutoFlow() {
+        const isReplyModalVisible = $(SELECTORS.replyModal).is(':visible');
+        const isAutoConfirmVisible = isReplyModalVisible && String(replyModalState.source ?? '') === 'auto';
+        const hasPending = Boolean(autoTriggerState.pendingTimerId);
+
+        if (!autoTriggerState.isBusy && !hasPending && !isAutoConfirmVisible) {
+            showMessage('warning', '当前没有进行流程');
+            return;
+        }
+
+        autoTriggerState.stopRequested = true;
+        autoTriggerState.requestId += 1;
+        autoTriggerState.isBusy = false;
+
+        if (autoTriggerState.pendingTimerId) {
+            window.clearTimeout(autoTriggerState.pendingTimerId);
+            autoTriggerState.pendingTimerId = 0;
+        }
+
+        if (isAutoConfirmVisible) {
+            const replyText = String($(SELECTORS.replyModalTextarea).val() ?? '').trim();
+            if (replyText) {
+                appendUnreplaceableContentToOutput(replyText);
+            }
+            hideReplyModal();
+        }
+
+        showMessage('success', '已停止流程');
+    }
+
     function stopFlow() {
+        if (isAutoFlowActive()) {
+            stopAutoFlow();
+            return;
+        }
+
         stopManualFlow();
     }
 
@@ -2427,8 +2497,6 @@
                     return;
                 }
 
-                seamlessOptimizedMessageIds.add(lastIdx);
-
                 await runReplyRequestFlow(outputText, {
                     source: 'auto',
                     chatId: chatIdBefore,
@@ -2452,12 +2520,11 @@
     /**
      * MESSAGE_RECEIVED 无感劫持钩子
      * 在酒馆收到完整的 AI 消息后、渲染到屏幕前，根据插件模板进行优化并静默替换。
-     * 现在不再依赖自动触发开关，独立工作。
      */
     async function handleMessageReceivedForSeamless() {
         const settings = loadSettings();
-        // 未开启无感劫持时直接跳过（不再强制依赖自动触发开关）
-        if (!settings.seamlessHijack) {
+        // 未开启无感劫持或未开启自动触发时，直接跳过
+        if (!settings.seamlessHijack || !isAutoTriggerEnabledForCurrentChat()) {
             return;
         }
 
@@ -2470,10 +2537,12 @@
         const lastIdx = chat.length - 1;
         const lastMessage = chat[lastIdx];
 
+        // 只处理 AI 消息
         if (!lastMessage || lastMessage.is_user) {
             return;
         }
 
+        // 防止对同一条消息重复处理
         if (seamlessOptimizedMessageIds.has(lastIdx)) {
             return;
         }
@@ -2483,23 +2552,17 @@
             return;
         }
 
-        // 提前标记，确保 queueAutoTriggerFlow 的同步检查能命中
+        // 重置取消标志，准备新一次优化
+        seamlessCancelRequested = false;
+
+        // === 关键修复：提前标记，确保 queueAutoTriggerFlow 的同步检查能命中 ===
         seamlessOptimizedMessageIds.add(lastIdx);
-
-        // 备份原始消息文本，取消时用于还原
-        const originalMessageText = lastMessageText;
-
-        // 中止旧请求并创建新 AbortController
-        if (seamlessAbortController) {
-            seamlessAbortController.abort();
-        }
-        const abortController = new AbortController();
-        seamlessAbortController = abortController;
 
         log('无感劫持：开始处理消息 #' + lastIdx);
         updateProcessingStatus(true);
 
         try {
+            // 提取内容范围
             const result = extractTextByRange(lastMessageText);
             if (!result.ok) {
                 log('无感劫持：内容提取失败，跳过。');
@@ -2507,6 +2570,7 @@
                 return;
             }
 
+            // 构建模板处理后的 Prompt
             const promptText = buildOutputFromSelectedTemplates(result.text, settings);
             if (!promptText.trim()) {
                 log('无感劫持：Prompt 为空，跳过。');
@@ -2514,22 +2578,12 @@
                 return;
             }
 
-            const replyText = await requestReplyText(promptText);
-
-            // 检查是否在 API 等待期间被取消
-            if (abortController.signal.aborted) {
-                log('无感劫持：请求已被用户取消，还原原始消息。');
-                const latestContext2 = SillyTavern.getContext();
-                const chat2 = latestContext2?.chat;
-                if (Array.isArray(chat2) && chat2[lastIdx]) {
-                    chat2[lastIdx].mes = originalMessageText;
-                    if (typeof latestContext2.updateMessageBlock === 'function') {
-                        latestContext2.updateMessageBlock(lastIdx, chat2[lastIdx], { rerenderMessage: true });
-                    }
-                    if (typeof latestContext2.saveChat === 'function') {
-                        await latestContext2.saveChat();
-                    }
-                }
+            // 调用插件的二次优化 API，等待后端返回（或 HTTP 级别后端自身超时报错）
+            let replyText;
+            try {
+                replyText = await requestReplyText(promptText);
+            } catch (reqErr) {
+                log('无感劫持：优化 API 请求出错或后端超时断开，放弃。', reqErr);
                 seamlessOptimizedMessageIds.delete(lastIdx);
                 return;
             }
@@ -2540,6 +2594,14 @@
                 return;
             }
 
+            // 检查用户是否已按下"停止优化"取消按钮
+            if (seamlessCancelRequested) {
+                log('无感劫持：用户已取消，放弃替换，保留原始消息。');
+                seamlessOptimizedMessageIds.delete(lastIdx);
+                return;
+            }
+
+            // 静默替换消息并刷新显示
             const chatIdBefore = getCurrentChatIdValue();
             const didReplace = await applyReplyReplacement({
                 replyText,
@@ -2559,15 +2621,49 @@
             console.error(`[${MODULE_NAME}] 无感劫持失败`, error);
             seamlessOptimizedMessageIds.delete(lastIdx);
         } finally {
-            if (seamlessAbortController === abortController) {
-                seamlessAbortController = null;
-            }
+            seamlessCancelRequested = false;
             updateProcessingStatus(false);
         }
     }
 
+
+    function handleGenerationEnded() {
+        queueAutoTriggerFlow();
+    }
+
+    // 显示/隐藏全屏面板
+    function togglePanel() {
+        const $panel = $(SELECTORS.panel);
+        const willShow = !$panel.is(':visible');
+
+        if (willShow) {
+            if (isMobileLayout()) {
+                setMobilePanelView('menu');
+            } else {
+                syncMobileTabsUi();
+            }
+        }
+
+        $panel.fadeToggle(200);
+    }
+
     function showPanel() {
-        $(SELECTORS.panel).show();
+        const $panel = $(SELECTORS.panel);
+        if (!$panel.length || $panel.is(':visible')) {
+            return;
+        }
+
+        $panel.stop(true, true).fadeIn(200);
+    }
+
+    function hidePanel() {
+        $(SELECTORS.panel).fadeOut(200);
+    }
+
+    function openPanelDetail(switchTab) {
+        showPanel();
+        switchTab();
+
         if (isMobileLayout()) {
             setMobilePanelView('detail');
         } else {
@@ -4389,7 +4485,12 @@
                             </div>
 
                             <div class="my-topbar-test-capture-send-options">
-
+                                <label for="my-topbar-test-auto-trigger-enabled" class="my-topbar-test-keep-tags-row">
+                                    <input id="my-topbar-test-auto-trigger-enabled"
+                                           class="my-topbar-test-keep-tags-checkbox"
+                                           type="checkbox">
+                                    <span class="my-topbar-test-keep-tags-text">开启自动触发</span>
+                                </label>
 
                                 <label for="my-topbar-test-skip-reply-confirm" class="my-topbar-test-keep-tags-row">
                                     <input id="my-topbar-test-skip-reply-confirm"
@@ -4667,44 +4768,6 @@
         }
     }
 
-    function updateProcessingStatus(isProcessing) {
-        const $cancelBtn = $('#my-topbar-test-seamless-cancel-btn');
-        if (isProcessing) {
-            $cancelBtn.css('display', 'flex');
-        } else {
-            $cancelBtn.hide();
-        }
-    }
-
-    function handleSeamlessCancelClick() {
-        if (seamlessAbortController) {
-            seamlessAbortController.abort();
-        }
-        updateProcessingStatus(false);
-    }
-
-    function showPanel() {
-        $(SELECTORS.panel).show();
-        if (isMobileLayout()) {
-            setMobilePanelView('detail');
-        } else {
-            syncMobileTabsUi();
-        }
-    }
-
-    function hidePanel() {
-        $(SELECTORS.panel).hide();
-    }
-
-    function togglePanel() {
-        const $panel = $(SELECTORS.panel);
-        if ($panel.is(':visible')) {
-            hidePanel();
-        } else {
-            showPanel();
-        }
-    }
-
     function mountButton() {
         const $topBar = $(SELECTORS.topBar);
 
@@ -4715,7 +4778,7 @@
 
         $(SELECTORS.button).remove();
         $('#my-topbar-test-status-container').remove();
-        $('#my-topbar-test-seamless-cancel-btn').remove();
+        $('#my-topbar-test-stop-seamless').remove();
 
         const $button = $(`
             <div id="my-topbar-test-button"
@@ -4729,33 +4792,51 @@
             </div>
         `);
 
-        // 取消无感优化的按钮，仅在优化中时显示
-        const $cancelBtn = $(`
-            <div id="my-topbar-test-seamless-cancel-btn"
-                 style="display: none; align-items: center; margin-left: 6px; cursor: pointer;"
-                 title="取消优化并还原">
-                <i class="fa-solid fa-xmark" style="font-size: 14px; color: #ff5c5c;"></i>
+        // 停止无感优化按钮
+        const $stopBtn = $(`
+            <div id="my-topbar-test-stop-seamless"
+                 class="interactable"
+                 title="停止优化并保留原始输出"
+                 tabindex="0"
+                 role="button"
+                 aria-label="停止无感优化"
+                 style="display: none; align-items: center; justify-content: center; width: 30px; height: 30px; margin-left: 6px; cursor: pointer; border-radius: 6px; background: rgba(255, 80, 80, 0.15); border: 1px solid rgba(255, 80, 80, 0.5); box-shadow: 0 0 8px rgba(255, 80, 80, 0.2); transition: all 0.2s ease;">
+                <i class="fa-solid fa-stop" style="color: #ff6060; font-size: 13px; text-shadow: 0 0 5px rgba(255,80,80,0.8);"></i>
+            </div>
+        `);
+
+        const $status = $(`
+            <div id="my-topbar-test-status-container" style="display: none; align-items: center; margin-left: 8px; font-size: 12px; opacity: 0.8; pointer-events: none; user-select: none;">
+                <i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 4px;"></i>
+                <span>优化中...</span>
             </div>
         `);
 
         const $anchor = $(SELECTORS.anchor);
         if ($anchor.length) {
             $anchor.after($button);
-            $button.after($cancelBtn);
+            $button.after($stopBtn);
+            $stopBtn.after($status);
         } else {
             $topBar.append($button);
-            $topBar.append($cancelBtn);
+            $topBar.append($stopBtn);
+            $topBar.append($status);
         }
-
-        // 绑定取消按钮点击事件
-        $cancelBtn.on('click', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            handleSeamlessCancelClick();
-        });
     }
 
     function bindEvents() {
+        // 停止无感优化点击事件
+        $(document)
+            .off('click.myTopbarTestStopSeamless', '#my-topbar-test-stop-seamless')
+            .on('click.myTopbarTestStopSeamless', '#my-topbar-test-stop-seamless', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                seamlessCancelRequested = true;
+                log('用户手动点击了停止优化按钮！');
+                // 立即在视觉上隐藏处理状态
+                updateProcessingStatus(false);
+            });
+
         // 顶部按钮点击打开面板
         $(document)
             .off('click.myTopbarTest', SELECTORS.button)
@@ -4863,6 +4944,12 @@
                 if (isMobileLayout()) {
                     setMobilePanelView('detail');
                 }
+            });
+
+        $(document)
+            .off('change.myTopbarTestAutoTriggerEnabled', SELECTORS.autoTriggerEnabledCheckbox)
+            .on('change.myTopbarTestAutoTriggerEnabled', SELECTORS.autoTriggerEnabledCheckbox, function () {
+                handleAutoTriggerEnabledCheckboxChanged();
             });
 
         $(document)
@@ -5414,6 +5501,7 @@
         loadSettings();
         await mountPanel();
         mountFloatingWindow();
+        syncAutoTriggerStateFromCurrentChat();
         syncUiFromSettings();
         syncMobileTabsUi();
         setExtractedBaseText(DEFAULT_TEXT);
@@ -5423,6 +5511,11 @@
         bindEvents();
         eventSource.off?.(event_types.CHAT_CHANGED, handleChatChanged);
         eventSource.on(event_types.CHAT_CHANGED, handleChatChanged);
+
+        eventSource.off?.(event_types.GENERATION_STOPPED, handleGenerationStopped);
+        eventSource.on(event_types.GENERATION_STOPPED, handleGenerationStopped);
+        eventSource.off?.(event_types.GENERATION_ENDED, handleGenerationEnded);
+        eventSource.on(event_types.GENERATION_ENDED, handleGenerationEnded);
 
         // 无感劫持：在 AI 消息到达后立即拦截并优化
         eventSource.off?.(event_types.MESSAGE_RECEIVED, handleMessageReceivedForSeamless);
