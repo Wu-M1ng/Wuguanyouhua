@@ -778,12 +778,16 @@
     function updateProcessingStatus(isProcessing) {
         const $status = $('#my-topbar-test-status-container');
         const $button = $(SELECTORS.button);
+        const $stopBtn = $('#my-topbar-test-stop-seamless');
+
         if (isProcessing) {
             $status.css('display', 'inline-flex');
             $button.addClass('is-spinning');
+            $stopBtn.css('display', 'flex');
         } else {
             $status.hide();
             $button.removeClass('is-spinning');
+            $stopBtn.hide();
         }
     }
 
@@ -2128,6 +2132,9 @@
             autoTriggerState.pendingTimerId = 0;
         }
 
+        // 切换对话时清除已处理的消息 ID 集合，防止用旧的 set 条目阻挡新对话的事件
+        seamlessOptimizedMessageIds.clear();
+
         syncAutoTriggerStateFromCurrentChat();
         syncAutoTriggerUiState();
     }
@@ -2462,6 +2469,9 @@
             }
 
             // === 无感劫持：若最后一条消息已被 MESSAGE_RECEIVED 钩子处理，跳过二次触发 ===
+            // 注意：此处故意【不】从 set 里删除 lastIdx，因为 applyReplyReplacement
+            // 完成后可能触发第二次 GENERATION_ENDED，若已删则无法阻挡二次触发。
+            // Set 的清理统一在 CHAT_CHANGED 事件时执行。
             const settings = loadSettings();
             if (settings.seamlessHijack) {
                 const latestContext = SillyTavern.getContext();
@@ -2469,7 +2479,6 @@
                 if (Array.isArray(chat) && chat.length > 0) {
                     const lastIdx = chat.length - 1;
                     if (seamlessOptimizedMessageIds.has(lastIdx)) {
-                        seamlessOptimizedMessageIds.delete(lastIdx);
                         log('无感劫持已处理此消息，跳过自动触发二次请求。');
                         return;
                     }
