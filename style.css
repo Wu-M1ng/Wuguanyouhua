@@ -2,30 +2,31 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    min-width: 32px;
-    height: 32px;
-    margin-left: 8px;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    margin-left: 12px;
     cursor: pointer;
-    font-size: 18px;
+    font-size: 20px;
     line-height: 1;
     position: relative;
     z-index: 2;
     pointer-events: auto;
     user-select: none;
-    /* Aurora Gradient Text Effect */
-    /* Aurora Gradient Text Effect */
-    background: linear-gradient(135deg, #00ffcc 0%, #a200ff 100%);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
-    transition: all 0.3s ease;
+    /* Glowing Neon Badge Effect */
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(0, 255, 204, 0.15) 0%, rgba(162, 0, 255, 0.15) 100%);
+    border: 1px solid rgba(0, 255, 204, 0.5);
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.2), inset 0 0 10px rgba(162, 0, 255, 0.2);
+    backdrop-filter: blur(5px);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 #my-topbar-test-button:hover {
-    transform: scale(1.1);
-    text-shadow: 0 0 25px rgba(162, 0, 255, 0.6);
+    transform: scale(1.1) translateY(-2px);
+    border-color: rgba(0, 255, 204, 0.8);
+    background: linear-gradient(135deg, rgba(0, 255, 204, 0.25) 0%, rgba(162, 0, 255, 0.25) 100%);
+    box-shadow: 0 0 25px rgba(0, 255, 204, 0.4), inset 0 0 15px rgba(162, 0, 255, 0.4);
 }
 
 .my-topbar-test-button-letter {
@@ -33,12 +34,12 @@
     align-items: center;
     justify-content: center;
     min-width: 1em;
-    font-size: 20px;
-    font-weight: 800;
+    font-size: 22px;
+    font-weight: 900;
     line-height: 1;
-    color: inherit;
-    /* 增加过渡缓冲，让停止旋转时更自然 */
-    transition: transform 0.2s ease;
+    color: #00ffff;
+    text-shadow: 0 0 12px rgba(0, 255, 255, 0.8);
+    transition: transform 0.2s ease, text-shadow 0.2s ease;
 }
 
 #my-topbar-test-button.is-spinning .my-topbar-test-button-letter {
@@ -68,41 +69,40 @@
     -webkit-backdrop-filter: blur(15px) saturate(150%);
 }
 
-/* 主容器：三栏布局 */
+/* 主容器：仪表盘透明承载器 */
 .my-topbar-test-container {
     position: relative;
     display: flex;
+    gap: 24px; /* Floating Cards Spacing */
     width: 90vw;
     height: 85vh;
     max-width: 1400px;
-    background: rgba(12, 16, 28, 0.7);
     color: #ffffff;
-    border: 1px solid rgba(0, 255, 204, 0.15);
-    border-radius: 16px;
-    /* Aurora Glowing Shadow */
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 
-                0 0 30px rgba(0, 255, 204, 0.08), 
-                inset 0 0 20px rgba(162, 0, 255, 0.05);
-    overflow: hidden;
+    /* REMOVED background, border, blur from container to apply them to children */
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    overflow: visible; /* Allowing child shadows to bleed out */
 }
 
 /* 关闭按钮 */
 .my-topbar-test-close-btn {
     position: absolute;
-    top: 15px;
-    right: 20px;
-    font-size: 24px;
+    top: -40px;
+    right: 0;
+    font-size: 28px;
     cursor: pointer;
-    opacity: 0.6;
-    transition: all 0.3s ease;
+    opacity: 0.7;
+    color: #fff;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     z-index: 10;
 }
 
 .my-topbar-test-close-btn:hover {
     opacity: 1;
     color: #ff5c5c;
-    text-shadow: 0 0 15px rgba(255, 92, 92, 0.6);
-    transform: scale(1.1);
+    text-shadow: 0 0 20px rgba(255, 92, 92, 0.8);
+    transform: scale(1.2) rotate(90deg);
 }
 
 /* 栏目标题 */
@@ -117,20 +117,27 @@
     text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
 }
 
-/* 左侧：菜单栏 (固定宽度) */
+/* 左侧：菜单栏悬浮卡片 */
 .my-topbar-test-col-left {
-    flex: 0 0 220px;
+    flex: 0 0 240px;
     display: flex;
     flex-direction: column;
-    padding: 20px;
-    background: rgba(5, 7, 12, 0.4);
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 24px;
+    /* Aurora Card Styles */
+    background: rgba(12, 16, 28, 0.75);
+    border: 1px solid rgba(0, 255, 204, 0.15);
+    border-radius: 16px;
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 
+                0 0 20px rgba(0, 255, 204, 0.05),
+                inset 0 0 15px rgba(0, 255, 204, 0.02);
 }
 
 .my-topbar-test-menu-btn {
     width: 100%;
-    margin: 0 0 10px 0;
-    padding: 12px 15px;
+    margin: 0 0 12px 0;
+    padding: 14px 16px;
     text-align: left;
     display: flex;
     align-items: center;
@@ -193,13 +200,23 @@
     text-shadow: 0 0 8px #d18aff;
 }
 
-/* 中间：设置面板 (弹性宽度) */
+/* 中间：设置面板卡片 (弹性宽度) */
 .my-topbar-test-col-middle {
     flex: 1 1 0;
-    padding: 20px 30px;
+    padding: 24px 32px;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    overflow-x: hidden;
+    /* Aurora Card Styles */
+    background: rgba(12, 16, 28, 0.85);
+    border: 1px solid rgba(0, 255, 204, 0.15);
+    border-radius: 16px;
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 
+                0 0 20px rgba(162, 0, 255, 0.05),
+                inset 0 0 15px rgba(162, 0, 255, 0.02);
 }
 
 /* Custom Aurora Scrollbar */
@@ -245,14 +262,21 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* 右侧：输出显示框 (弹性宽度) */
+/* 右侧：输出显示框卡片 (弹性宽度) */
 .my-topbar-test-col-right {
     flex: 1 1 0;
-    padding: 20px 30px;
+    padding: 24px 32px;
     display: flex;
     flex-direction: column;
-    background: rgba(0, 0, 0, 0.1);
-    border-left: 1px solid var(--SmartThemeBorderColor, rgba(255, 255, 255, 0.12));
+    /* Aurora Card Styles */
+    background: rgba(8, 11, 20, 0.85);
+    border: 1px solid rgba(0, 255, 204, 0.15);
+    border-radius: 16px;
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 
+                0 0 20px rgba(0, 255, 204, 0.05),
+                inset 0 0 15px rgba(0, 255, 204, 0.02);
 }
 
 .my-topbar-test-textarea {
@@ -1042,8 +1066,9 @@ body.my-topbar-test-template-dragging .my-topbar-test-template-apply {
         display: none;
         flex: 1 1 auto;
         width: 100%;
-        padding: 16px;
-        border: none;
+        padding: 20px;
+        border-radius: 12px;
+        box-sizing: border-box;
     }
 
     #my-topbar-test-panel[data-mobile-view="menu"] .my-topbar-test-col-left {
