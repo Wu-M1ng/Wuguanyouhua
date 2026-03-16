@@ -2099,28 +2099,11 @@
             }
             hideReplyModal();
         }
-
-        autoTriggerState.requestId += 1;
-        autoTriggerState.isBusy = false;
-        autoTriggerState.stopRequested = false;
-        autoTriggerState.stoppedByUser = false;
-
-        if (autoTriggerState.pendingTimerId) {
-            window.clearTimeout(autoTriggerState.pendingTimerId);
-            autoTriggerState.pendingTimerId = 0;
-        }
-
-        syncAutoTriggerStateFromCurrentChat();
-        syncAutoTriggerUiState();
     }
 
     function stopManualFlow() {
         const isReplyModalVisible = $(SELECTORS.replyModal).is(':visible');
         const replySource = String(replyModalState.source ?? '');
-        if (isAutoFlowActive()) {
-            showMessage('warning', '当前正在进行自动触发');
-            return;
-        }
 
         const isSending = manualSendState.isBusy;
         const isManualConfirmVisible = isReplyModalVisible && replySource === 'manual';
@@ -2156,42 +2139,7 @@
         }
     }
 
-    function stopAutoFlow() {
-        const isReplyModalVisible = $(SELECTORS.replyModal).is(':visible');
-        const isAutoConfirmVisible = isReplyModalVisible && String(replyModalState.source ?? '') === 'auto';
-        const hasPending = Boolean(autoTriggerState.pendingTimerId);
-
-        if (!autoTriggerState.isBusy && !hasPending && !isAutoConfirmVisible) {
-            showMessage('warning', '当前没有进行流程');
-            return;
-        }
-
-        autoTriggerState.stopRequested = true;
-        autoTriggerState.requestId += 1;
-        autoTriggerState.isBusy = false;
-
-        if (autoTriggerState.pendingTimerId) {
-            window.clearTimeout(autoTriggerState.pendingTimerId);
-            autoTriggerState.pendingTimerId = 0;
-        }
-
-        if (isAutoConfirmVisible) {
-            const replyText = String($(SELECTORS.replyModalTextarea).val() ?? '').trim();
-            if (replyText) {
-                appendUnreplaceableContentToOutput(replyText);
-            }
-            hideReplyModal();
-        }
-
-        showMessage('success', '已停止流程');
-    }
-
     function stopFlow() {
-        if (isAutoFlowActive()) {
-            stopAutoFlow();
-            return;
-        }
-
         stopManualFlow();
     }
 
@@ -2617,6 +2565,11 @@
             updateProcessingStatus(false);
         }
     }
+
+    function showPanel() {
+        $(SELECTORS.panel).show();
+        if (isMobileLayout()) {
+            setMobilePanelView('detail');
         } else {
             syncMobileTabsUi();
         }
@@ -5439,7 +5392,6 @@
         loadSettings();
         await mountPanel();
         mountFloatingWindow();
-        syncAutoTriggerStateFromCurrentChat();
         syncUiFromSettings();
         syncMobileTabsUi();
         setExtractedBaseText(DEFAULT_TEXT);
@@ -5449,11 +5401,6 @@
         bindEvents();
         eventSource.off?.(event_types.CHAT_CHANGED, handleChatChanged);
         eventSource.on(event_types.CHAT_CHANGED, handleChatChanged);
-
-        eventSource.off?.(event_types.GENERATION_STOPPED, handleGenerationStopped);
-        eventSource.on(event_types.GENERATION_STOPPED, handleGenerationStopped);
-        eventSource.off?.(event_types.GENERATION_ENDED, handleGenerationEnded);
-        eventSource.on(event_types.GENERATION_ENDED, handleGenerationEnded);
 
         // 无感劫持：在 AI 消息到达后立即拦截并优化
         eventSource.off?.(event_types.MESSAGE_RECEIVED, handleMessageReceivedForSeamless);
