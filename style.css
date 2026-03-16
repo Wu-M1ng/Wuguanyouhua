@@ -1,52 +1,49 @@
-:root {
-    --accent-color: #00ffcc;
-    --accent-glow: rgba(0, 255, 204, 0.4);
-    --bg-glass: rgba(15, 15, 20, 0.85);
-    --bg-glass-heavy: rgba(10, 10, 15, 0.95);
-    --border-glass: rgba(255, 255, 255, 0.1);
-    --text-primary: #ffffff;
-    --text-secondary: rgba(255, 255, 255, 0.7);
-    --soft-shadow: 0 8px 324px 0 rgba(0, 0, 0, 0.37);
-    --panel-radius: 20px;
-}
-
-/* 字体优化 */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
 #my-topbar-test-button {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 32px;
+    min-width: 32px;
     height: 32px;
     margin-left: 8px;
     cursor: pointer;
     font-size: 18px;
+    line-height: 1;
     position: relative;
     z-index: 2;
-    color: var(--text-primary);
-    text-shadow: 0 0 10px var(--accent-glow);
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: auto;
+    user-select: none;
+    /* Aurora Gradient Text Effect */
+    /* Aurora Gradient Text Effect */
+    background: linear-gradient(135deg, #00ffcc 0%, #a200ff 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+    transition: all 0.3s ease;
 }
 
 #my-topbar-test-button:hover {
-    transform: scale(1.15) rotate(5deg);
-    color: var(--accent-color);
+    transform: scale(1.1);
+    text-shadow: 0 0 25px rgba(162, 0, 255, 0.6);
 }
 
 .my-topbar-test-button-letter {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    min-width: 1em;
     font-size: 20px;
     font-weight: 800;
     line-height: 1;
+    color: inherit;
+    /* 增加过渡缓冲，让停止旋转时更自然 */
     transition: transform 0.2s ease;
 }
 
 #my-topbar-test-button.is-spinning .my-topbar-test-button-letter {
     animation: my-topbar-spin 2s linear infinite;
-    color: var(--accent-color);
+    color: var(--SmartThemeQuoteColor, #00ffcc);
 }
 
 @keyframes my-topbar-spin {
@@ -57,343 +54,1076 @@
 /* 全屏遮罩层 */
 .my-topbar-test-fullscreen-overlay {
     position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.4);
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(5, 7, 12, 0.8);
     z-index: 9999;
     display: flex;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(15px) saturate(160%);
-    -webkit-backdrop-filter: blur(15px) saturate(160%);
-    animation: fadeInOverlay 0.4s ease;
+    /* Deep Aurora Glassmorphism */
+    backdrop-filter: blur(15px) saturate(150%);
+    -webkit-backdrop-filter: blur(15px) saturate(150%);
 }
 
-@keyframes fadeInOverlay {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-/* 主容器 */
+/* 主容器：三栏布局 */
 .my-topbar-test-container {
     position: relative;
     display: flex;
     width: 90vw;
     height: 85vh;
     max-width: 1400px;
-    background: var(--bg-glass);
-    color: var(--text-primary);
-    border: 1px solid var(--border-glass);
-    border-radius: var(--panel-radius);
-    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    background: rgba(12, 16, 28, 0.7);
+    color: #ffffff;
+    border: 1px solid rgba(0, 255, 204, 0.15);
+    border-radius: 16px;
+    /* Aurora Glowing Shadow */
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 
+                0 0 30px rgba(0, 255, 204, 0.08), 
+                inset 0 0 20px rgba(162, 0, 255, 0.05);
     overflow: hidden;
-    font-family: 'Inter', system-ui, sans-serif;
-}
-
-/* 背景光晕装饰 */
-.my-topbar-test-container::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -20%;
-    width: 60%;
-    height: 100%;
-    background: radial-gradient(circle, rgba(0, 255, 204, 0.05) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
-}
-
-/* 栏目通用样式 */
-.my-topbar-test-col-left,
-.my-topbar-test-col-middle,
-.my-topbar-test-col-right {
-    position: relative;
-    z-index: 1;
 }
 
 /* 关闭按钮 */
 .my-topbar-test-close-btn {
     position: absolute;
-    top: 20px;
-    right: 25px;
-    font-size: 18px;
-    width: 32px;
-    height: 32px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    top: 15px;
+    right: 20px;
+    font-size: 24px;
     cursor: pointer;
+    opacity: 0.6;
     transition: all 0.3s ease;
     z-index: 10;
 }
 
 .my-topbar-test-close-btn:hover {
-    background: rgba(255, 80, 80, 0.2);
-    color: #ff5050;
-    transform: rotate(90deg);
+    opacity: 1;
+    color: #ff5c5c;
+    text-shadow: 0 0 15px rgba(255, 92, 92, 0.6);
+    transform: scale(1.1);
 }
 
-/* 左侧导航栏 */
+/* 栏目标题 */
+.my-topbar-test-section-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    text-align: center;
+    letter-spacing: 2px;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+}
+
+/* 左侧：菜单栏 (固定宽度) */
 .my-topbar-test-col-left {
     flex: 0 0 220px;
-    background: rgba(0, 0, 0, 0.3);
-    padding: 30px 15px;
-    border-right: 1px solid var(--border-glass);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    background: rgba(5, 7, 12, 0.4);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.my-topbar-test-menu-btn {
+    width: 100%;
+    margin: 0 0 10px 0;
+    padding: 12px 15px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.my-topbar-test-menu-btn.active {
+    color: #fff;
+    /* Aurora Active Gradient */
+    background: linear-gradient(90deg, rgba(0, 255, 204, 0.15) 0%, rgba(162, 0, 255, 0.15) 100%);
+    border-color: rgba(0, 255, 204, 0.3);
+    box-shadow: inset 3px 0 0 #00ffcc, 0 0 15px rgba(0, 255, 204, 0.1);
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+}
+
+.my-topbar-test-menu-btn:hover:not(.active) {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateX(4px);
+}
+
+.my-topbar-test-trigger-btn {
+    background: rgba(0, 255, 204, 0.1);
+    border: 1px solid rgba(0, 255, 204, 0.3);
+    text-align: center;
+    justify-content: center;
+    color: #00ffcc;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.my-topbar-test-trigger-btn:hover {
+    background: rgba(0, 255, 204, 0.2);
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.4), inset 0 0 10px rgba(0, 255, 204, 0.2);
+    transform: translateY(-2px);
+    color: #fff;
+    text-shadow: 0 0 8px #00ffcc;
+}
+
+.my-topbar-test-send-btn {
+    background: rgba(162, 0, 255, 0.1);
+    border: 1px solid rgba(162, 0, 255, 0.3);
+    text-align: center;
+    justify-content: center;
+    color: #d18aff;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.my-topbar-test-send-btn:hover {
+    background: rgba(162, 0, 255, 0.2);
+    box-shadow: 0 0 15px rgba(162, 0, 255, 0.4), inset 0 0 10px rgba(162, 0, 255, 0.2);
+    transform: translateY(-2px);
+    color: #fff;
+    text-shadow: 0 0 8px #d18aff;
+}
+
+/* 中间：设置面板 (弹性宽度) */
+.my-topbar-test-col-middle {
+    flex: 1 1 0;
+    padding: 20px 30px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+/* Custom Aurora Scrollbar */
+.my-topbar-test-col-middle::-webkit-scrollbar,
+.my-topbar-test-textarea::-webkit-scrollbar,
+.my-topbar-test-container::-webkit-scrollbar,
+.my-topbar-test-template-list::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.my-topbar-test-col-middle::-webkit-scrollbar-track,
+.my-topbar-test-textarea::-webkit-scrollbar-track,
+.my-topbar-test-container::-webkit-scrollbar-track,
+.my-topbar-test-template-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+}
+.my-topbar-test-col-middle::-webkit-scrollbar-thumb,
+.my-topbar-test-textarea::-webkit-scrollbar-thumb,
+.my-topbar-test-container::-webkit-scrollbar-thumb,
+.my-topbar-test-template-list::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 204, 0.3);
+    border-radius: 10px;
+    box-shadow: inset 0 0 5px rgba(0, 255, 204, 0.5);
+}
+.my-topbar-test-col-middle::-webkit-scrollbar-thumb:hover,
+.my-topbar-test-textarea::-webkit-scrollbar-thumb:hover,
+.my-topbar-test-container::-webkit-scrollbar-thumb:hover,
+.my-topbar-test-template-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(162, 0, 255, 0.5);
+    box-shadow: inset 0 0 8px rgba(162, 0, 255, 0.8);
+}
+
+.my-topbar-test-settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 右侧：输出显示框 (弹性宽度) */
+.my-topbar-test-col-right {
+    flex: 1 1 0;
+    padding: 20px 30px;
+    display: flex;
+    flex-direction: column;
+    background: rgba(0, 0, 0, 0.1);
+    border-left: 1px solid var(--SmartThemeBorderColor, rgba(255, 255, 255, 0.12));
+}
+
+.my-topbar-test-textarea {
+    flex: 1;
+    width: 100%;
+    resize: none;
+    box-sizing: border-box;
+    font-size: 14px;
+    line-height: 1.6;
+    font-family: inherit;
+    padding: 15px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* 原有组件样式适配 */
+.my-topbar-test-label {
+    font-size: 13px;
+    line-height: 1.5;
+    opacity: 0.9;
+    color: #ffffff;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+}
+
+.my-topbar-test-keep-tags-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(5, 7, 12, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    user-select: none;
+    width: fit-content;
+    transition: all 0.3s ease;
+}
+
+.my-topbar-test-keep-tags-row:hover {
+    background: rgba(0, 255, 204, 0.1);
+    border-color: rgba(0, 255, 204, 0.3);
+    box-shadow: 0 0 10px rgba(0, 255, 204, 0.1);
+}
+
+.my-topbar-test-keep-tags-checkbox { margin: 0; cursor: pointer; accent-color: #00ffcc; }
+.my-topbar-test-keep-tags-text { font-size: 13px; line-height: 1; opacity: 0.95; color: #fff; }
+
+.my-topbar-test-range-row { display: flex; flex-direction: column; gap: 8px; }
+
+.my-topbar-test-floating-field {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
-.my-topbar-test-section-title {
-    font-size: 11px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    color: var(--accent-color);
-    margin-bottom: 20px;
-    padding-left: 10px;
-    opacity: 0.8;
+.my-topbar-test-floating-select {
+    width: 100%;
+    min-height: 42px;
+    box-sizing: border-box;
+    padding: 0 12px;
+    font-size: 14px;
 }
 
-.my-topbar-test-menu-btn {
-    background: transparent;
-    border: none;
-    padding: 12px 16px;
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-secondary);
+.my-topbar-test-floating-size-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.my-topbar-test-floating-size-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.my-topbar-test-floating-size-input-wrap {
     display: flex;
     align-items: center;
-    gap: 12px;
-    transition: all 0.2s ease;
-    cursor: pointer;
     width: 100%;
+    min-height: 42px;
+    border-radius: 8px;
+    box-sizing: border-box;
+    padding: 0 12px;
+    background: rgba(5, 7, 12, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s ease;
+}
+
+.my-topbar-test-floating-size-input-wrap:focus-within {
+    border-color: rgba(0, 255, 204, 0.4);
+    box-shadow: 0 0 10px rgba(0, 255, 204, 0.2), inset 0 0 8px rgba(0, 255, 204, 0.1);
+}
+
+.my-topbar-test-floating-size-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #fff;
+    padding: 10px 0;
+    font-size: 14px;
+}
+
+.my-topbar-test-floating-size-unit {
+    flex: 0 0 auto;
+    opacity: 0.82;
+    font-size: 13px;
+    margin-left: 8px;
+}
+
+.my-topbar-test-tag-input-wrap {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 42px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(5, 7, 12, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+.my-topbar-test-tag-input-wrap:focus-within {
+    border-color: rgba(0, 255, 204, 0.4);
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.15), inset 0 0 10px rgba(0, 255, 204, 0.05);
+}
+
+.my-topbar-test-tag-prefix,
+.my-topbar-test-tag-suffix {
+    flex: 0 0 auto;
+    padding: 10px 12px;
+    color: rgba(0, 255, 204, 0.8);
+    user-select: none;
+    font-family: 'Fira Code', Consolas, monospace;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.my-topbar-test-tag-input {
+    flex: 1 1 auto;
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #fff;
+    padding: 10px 0;
+    font-size: 14px;
+}
+
+.my-topbar-test-range-tip,
+.my-topbar-test-template-tip {
+    font-size: 13px;
+    line-height: 1.6;
+    opacity: 0.6;
+    margin-top: 8px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.my-topbar-test-template-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.my-topbar-test-template-preset-bar {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.my-topbar-test-template-preset-drawer {
+    flex: 1 1 240px;
+    min-width: 0;
+}
+
+.my-topbar-test-template-preset-current,
+.my-topbar-test-template-preset-option {
+    width: 100%;
+    margin: 0;
     text-align: left;
 }
 
-.my-topbar-test-menu-btn i {
-    font-size: 16px;
-    width: 20px;
+.my-topbar-test-template-preset-current {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.my-topbar-test-template-preset-current-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.my-topbar-test-template-preset-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.my-topbar-test-template-preset-empty {
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    background: rgba(5, 7, 12, 0.3);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.my-topbar-test-template-preset-actions,
+.my-topbar-test-template-tools {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.my-topbar-test-template-preset-actions {
+    flex: 0 0 auto;
+}
+
+.my-topbar-test-template-tools {
+    justify-content: flex-end;
+}
+
+.my-topbar-test-keep-tags-row.is-disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.my-topbar-test-keep-tags-row.is-disabled .my-topbar-test-keep-tags-checkbox {
+    cursor: not-allowed;
+}
+
+.my-topbar-test-range-only-replace-tip {
+    font-size: 12px;
+    line-height: 1.6;
+    opacity: 0.75;
+    margin-top: -6px;
+}
+
+.my-topbar-test-template-browse-view,
+.my-topbar-test-template-editor-view {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.my-topbar-test-capture-send-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.my-topbar-test-capture-send-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.my-topbar-test-template-tool-button {
+    width: auto;
+    padding: 8px 15px;
+    font-size: 12px;
+}
+
+.my-topbar-test-template-icon-button {
+    width: 40px;
+    min-height: 40px;
+    margin: 0;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+
+.my-topbar-test-template-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    padding-right: 8px;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+.my-topbar-test-template-item {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    position: relative;
+    transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), opacity 160ms ease, box-shadow 180ms ease;
+}
+
+.my-topbar-test-template-item.is-dragging {
+    opacity: 0.98;
+    z-index: 8;
+    pointer-events: none;
+    transform: translate3d(var(--my-topbar-test-drag-x, 0), var(--my-topbar-test-drag-y, 0), 0) scale(1.03);
+    transform-origin: var(--my-topbar-test-drag-origin-x, 50%) var(--my-topbar-test-drag-origin-y, 50%);
+    box-shadow: 0 18px 34px rgba(0, 0, 0, 0.28);
+}
+
+.my-topbar-test-template-main {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: stretch;
+}
+
+.my-topbar-test-template-combo {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.my-topbar-test-template-item-actions {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 1;
+    display: flex;
+    gap: 6px;
+}
+
+.my-topbar-test-template-apply {
+    flex: 1 1 auto;
+    width: 100%;
+    margin: 0;
+    text-align: left;
+    padding: 0 108px 0 15px;
+    min-height: 64px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
+    touch-action: pan-y;
+    border-radius: 12px;
+    background: rgba(5, 7, 12, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.8);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.my-topbar-test-template-apply:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(0, 255, 204, 0.3);
+    color: #fff;
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.1);
+    transform: translateY(-1px);
+}
+
+.my-topbar-test-template-item.is-selected .my-topbar-test-template-apply,
+.my-topbar-test-template-apply.is-selected {
+    background: linear-gradient(90deg, rgba(0, 255, 204, 0.15) 0%, rgba(162, 0, 255, 0.1) 100%);
+    border-color: rgba(0, 255, 204, 0.5);
+    color: #00ffcc;
+    box-shadow: inset 3px 0 0 #00ffcc, 0 0 20px rgba(0, 255, 204, 0.15);
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
+.my-topbar-test-template-item.is-dragging .my-topbar-test-template-apply {
+    transform: scale(1.01);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+}
+
+body.my-topbar-test-template-dragging .my-topbar-test-template-apply {
+    cursor: grabbing;
+}
+
+.my-topbar-test-template-editor-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #00ffcc;
+    text-shadow: 0 0 10px rgba(0, 255, 204, 0.4);
+}
+
+.my-topbar-test-template-editor-input {
+    width: 100%;
+    min-height: 42px;
+    box-sizing: border-box;
+    font-size: 14px;
+    padding: 0 12px;
+    border-radius: 8px;
+    background: rgba(5, 7, 12, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #fff;
+    transition: all 0.3s ease;
+}
+
+.my-topbar-test-template-editor-input:focus {
+    outline: none;
+    border-color: rgba(0, 255, 204, 0.4);
+    box-shadow: 0 0 10px rgba(0, 255, 204, 0.2), inset 0 0 8px rgba(0, 255, 204, 0.1);
+}
+
+.my-topbar-test-template-editor-textarea {
+    width: 100%;
+    min-height: 260px;
+    resize: vertical;
+    box-sizing: border-box;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 15px;
+    border-radius: 8px;
+    background: rgba(5, 7, 12, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #fff;
+    transition: all 0.3s ease;
+}
+
+.my-topbar-test-template-editor-textarea:focus {
+    outline: none;
+    border-color: rgba(162, 0, 255, 0.4);
+    box-shadow: 0 0 15px rgba(162, 0, 255, 0.15), inset 0 0 10px rgba(162, 0, 255, 0.05);
+}
+
+.my-topbar-test-template-editor-delete-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.my-topbar-test-template-editor-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.my-topbar-test-template-empty {
+    padding: 20px;
+    text-align: center;
+    border-radius: 12px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.4);
+    background: rgba(5, 7, 12, 0.3);
+    border: 1px dashed rgba(0, 255, 204, 0.15);
+    transition: all 0.3s ease;
+}
+
+.my-topbar-test-template-empty:hover {
+    border-color: rgba(0, 255, 204, 0.3);
+    background: rgba(0, 255, 204, 0.03);
+}
+
+.my-topbar-test-action-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.my-topbar-test-action-dialog-card {
+    width: min(420px, calc(100% - 32px));
+    padding: 24px;
+    border-radius: 20px;
+    background: rgba(12, 16, 28, 0.9);
+    border: 1px solid rgba(0, 255, 204, 0.25);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 255, 204, 0.1);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    color: #fff;
+}
+
+.my-topbar-test-action-dialog-title {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.my-topbar-test-action-dialog-message {
+    font-size: 13px;
+    line-height: 1.6;
+    opacity: 0.86;
+    white-space: pre-wrap;
+}
+
+.my-topbar-test-action-dialog-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.my-topbar-test-action-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.my-topbar-test-action-dialog-button.is-primary {
+    border-color: rgba(0, 255, 204, 0.5);
+    background: linear-gradient(90deg, rgba(0, 255, 204, 0.2) 0%, rgba(162, 0, 255, 0.2) 100%);
+    box-shadow: inset 0 0 10px rgba(0, 255, 204, 0.1);
+    color: #fff;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.4);
+}
+
+.my-topbar-test-mobile-longpress-tip {
+    position: absolute;
+    z-index: 10002;
+    max-width: min(240px, calc(100vw - 24px));
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--SmartThemeBodyColor, #fff);
+    background: rgba(0, 0, 0, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.my-topbar-test-api-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.my-topbar-test-api-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.my-topbar-test-api-input {
+    width: 100%;
+    min-height: 42px;
+    box-sizing: border-box;
+    padding: 0 14px;
+    font-size: 14px;
+    border-radius: 10px;
+    background: rgba(5, 7, 12, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #fff;
+    transition: all 0.3s ease;
+}
+
+.my-topbar-test-api-input:focus {
+    outline: none;
+    border-color: rgba(0, 255, 204, 0.4);
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.15);
+}
+
+.my-topbar-test-api-stream-row {
+    min-height: 42px;
+}
+
+.my-topbar-test-api-drawer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.my-topbar-test-api-drawer-toggle,
+.my-topbar-test-api-source-current,
+.my-topbar-test-api-source-option {
+    width: 100%;
+    margin: 0;
+    text-align: left;
+    justify-content: flex-start;
+}
+
+.my-topbar-test-api-drawer-body,
+.my-topbar-test-api-source-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.my-topbar-test-reply-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.68);
+    backdrop-filter: blur(4px);
+}
+
+.my-topbar-test-reply-modal-card {
+    position: relative;
+    width: min(720px, calc(100% - 40px));
+    padding: 20px;
+    border-radius: 16px;
+    background: rgba(12, 16, 28, 0.85);
+    border: 1px solid rgba(0, 255, 204, 0.2);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6), 0 0 25px rgba(162, 0, 255, 0.1);
+    backdrop-filter: blur(15px);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    color: #fff;
+}
+
+.my-topbar-test-reply-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    min-height: 36px;
+    margin: 0;
+    padding: 0;
+    font-size: 18px;
+}
+
+.my-topbar-test-reply-modal-title {
+    font-size: 15px;
+    font-weight: 700;
+    padding-right: 36px;
+}
+
+.my-topbar-test-reply-modal-view {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.my-topbar-test-reply-modal-tip {
+    font-size: 13px;
+    line-height: 1.6;
+    opacity: 0.82;
+}
+
+.my-topbar-test-reply-modal-textarea,
+.my-topbar-test-reply-modal-feedback-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 15px;
+    border-radius: 8px;
+    background: rgba(5, 7, 12, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #fff;
+    transition: all 0.3s ease;
+}
+
+.my-topbar-test-reply-modal-textarea:focus,
+.my-topbar-test-reply-modal-feedback-textarea:focus {
+    outline: none;
+    border-color: rgba(0, 255, 204, 0.4);
+    box-shadow: 0 0 10px rgba(0, 255, 204, 0.15), inset 0 0 5px rgba(0, 255, 204, 0.05);
+}
+
+.my-topbar-test-reply-modal-textarea {
+    min-height: 260px;
+}
+
+.my-topbar-test-reply-modal-feedback-textarea {
+    min-height: 180px;
+}
+
+.my-topbar-test-reply-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.my-topbar-test-reply-modal-feedback-actions {
+    justify-content: space-between;
+}
+
+.my-topbar-test-floating-window {
+    position: fixed;
+    left: 16px;
+    top: 16px;
+    width: 88px;
+    height: 88px;
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    touch-action: none;
+}
+
+.my-topbar-test-floating-window.is-dragging {
+    cursor: grabbing;
+}
+
+.my-topbar-test-floating-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    -webkit-user-drag: none;
+    filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.28));
+}
+
+.my-topbar-test-api-stop-field {
+    grid-column: 1 / -1;
+}
+
+.my-topbar-test-api-custom-config {
+    padding-top: 10px;
+    border-top: 1px solid var(--SmartThemeBorderColor, rgba(255, 255, 255, 0.12));
+}
+
+.my-topbar-test-api-model-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#my-topbar-test-status-container {
+    white-space: nowrap;
+    color: var(--SmartThemeQuoteColor, #00ffcc);
+    text-shadow: 0 0 5px rgba(0, 255, 204, 0.4);
+}
+
+.my-topbar-test-mobile-tabs {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 56px 0 16px;
+}
+
+.my-topbar-test-mobile-tab-buttons {
+    flex: 1 1 auto;
+    display: flex;
+    gap: 10px;
+}
+
+.my-topbar-test-mobile-tab {
+    flex: 1 1 0;
+    margin: 0;
+    justify-content: center;
     text-align: center;
 }
 
-.my-topbar-test-menu-btn:hover {
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.my-topbar-test-menu-btn.active {
-    color: var(--text-primary);
-    background: rgba(0, 255, 204, 0.1);
-    box-shadow: inset 3px 0 0 var(--accent-color);
-}
-
-/* 中间内容区 */
-.my-topbar-test-col-middle {
-    flex: 1;
-    padding: 30px 40px;
-    overflow-y: auto;
-    background: rgba(255, 255, 255, 0.01);
-}
-
-/* 自定义开关组件 (Switch) */
-.my-topbar-test-keep-tags-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 18px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--border-glass);
-    border-radius: 16px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.my-topbar-test-keep-tags-row:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-.my-topbar-test-keep-tags-checkbox {
-    appearance: none;
-    -webkit-appearance: none;
-    width: 44px;
-    height: 24px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    position: relative;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    outline: none;
+.my-topbar-test-mobile-back {
     margin: 0;
+    white-space: nowrap;
 }
 
-.my-topbar-test-keep-tags-checkbox:checked {
-    background: var(--accent-color);
+.my-topbar-test-mobile-tab.active {
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 255, 204, 0.15) 100%);
+    box-shadow: inset 0 -3px 0 #00ffcc, 0 5px 15px rgba(0, 255, 204, 0.1);
+    color: #00ffcc;
+    text-shadow: 0 0 12px rgba(0, 255, 204, 0.6);
 }
 
-.my-topbar-test-keep-tags-checkbox::before {
-    content: '';
-    position: absolute;
-    width: 18px;
-    height: 18px;
-    background: white;
-    border-radius: 50%;
-    top: 3px;
-    left: 3px;
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+/* Scrollbar styling for all elements */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 255, 204, 0.2) rgba(0, 0, 0, 0.1);
 }
 
-.my-topbar-test-keep-tags-checkbox:checked::before {
-    transform: translateX(20px);
-}
-
-/* 输入框优化 */
-.my-topbar-test-api-input, 
-.my-topbar-test-tag-input,
-.my-topbar-test-textarea,
-.my-topbar-test-template-editor-textarea,
-.my-topbar-test-template-editor-input {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--border-glass);
-    border-radius: 12px;
-    padding: 12px 16px;
-    color: var(--text-primary);
-    font-size: 14px;
-    transition: all 0.3s ease;
-}
-
-.my-topbar-test-api-input:focus, 
-.my-topbar-test-tag-input:focus,
-.my-topbar-test-textarea:focus {
-    border-color: var(--accent-color);
-    background: rgba(0, 0, 0, 0.3);
-    box-shadow: 0 0 0 3px rgba(0, 255, 204, 0.1);
-    outline: none;
-}
-
-/* 右侧输出面板 */
-.my-topbar-test-col-right {
-    flex: 0 0 380px;
-    background: rgba(0, 0, 0, 0.15);
-    padding: 30px 20px;
-    border-left: 1px solid var(--border-glass);
-    display: flex;
-    flex-direction: column;
-}
-
-.my-topbar-test-textarea {
-    flex: 1;
-    margin-top: 15px;
-    font-family: 'Fira Code', 'Consolas', monospace;
-    font-size: 13px;
-    line-height: 1.6;
-}
-
-/* 按钮统一美化 */
-.my-topbar-test-template-tool-button,
-.my-topbar-test-trigger-btn,
-.my-topbar-test-send-btn {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--border-glass);
-    border-radius: 12px;
-    padding: 12px 20px;
-    color: var(--text-primary);
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.my-topbar-test-trigger-btn {
-    background: linear-gradient(135deg, rgba(0, 255, 204, 0.2), rgba(0, 255, 204, 0.05));
-    border-color: rgba(0, 255, 204, 0.3);
-}
-
-.my-topbar-test-trigger-btn:hover {
-    background: linear-gradient(135deg, rgba(0, 255, 204, 0.3), rgba(0, 255, 204, 0.1));
-    border-color: var(--accent-color);
-    box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
-}
-
-/* 滚动条美化 */
-::-webkit-scrollbar {
-    width: 6px;
-}
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-/* 移动端适配 */
-@media (max-width: 768px) {
+@media (max-width: 850px) {
     .my-topbar-test-container {
         flex-direction: column;
-        width: 100vw;
-        height: 100vh;
-        border-radius: 0;
+        width: 96vw;
+        height: 90vh;
     }
-    .my-topbar-test-col-left {
-        flex: 0 0 auto;
-        flex-direction: row;
-        overflow-x: auto;
-        padding: 10px;
+
+    .my-topbar-test-mobile-tabs {
+        display: flex;
     }
-    .my-topbar-test-section-title { display: none; }
-    .my-topbar-test-menu-btn { width: auto; white-space: nowrap; }
-}
 
-/* 追加的视觉增强 */
-.my-topbar-test-bg-glow {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(circle, rgba(0, 255, 204, 0.1) 0%, transparent 70%);
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-    z-index: -1;
-    filter: blur(80px);
-}
+    .my-topbar-test-section-title {
+        margin-bottom: 12px;
+    }
 
-.my-topbar-test-processing-status {
-    background: rgba(0, 255, 204, 0.1);
-    border: 1px solid rgba(0, 255, 204, 0.2);
-    border-radius: 12px;
-    padding: 12px 20px;
-    margin-top: 15px;
-    font-size: 13px;
-    color: var(--accent-color);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    animation: pulseGlow 2s infinite ease-in-out;
-}
+    .my-topbar-test-col-left,
+    .my-topbar-test-col-middle,
+    .my-topbar-test-col-right {
+        display: none;
+        flex: 1 1 auto;
+        width: 100%;
+        padding: 16px;
+        border: none;
+    }
 
-@keyframes pulseGlow {
-    0% { box-shadow: 0 0 5px rgba(0, 255, 204, 0.2); }
-    50% { box-shadow: 0 0 20px rgba(0, 255, 204, 0.4); }
-    100% { box-shadow: 0 0 5px rgba(0, 255, 204, 0.2); }
-}
+    #my-topbar-test-panel[data-mobile-view="menu"] .my-topbar-test-col-left {
+        display: flex;
+    }
 
-/* 标签提示微调 */
-.my-topbar-test-keep-tags-text {
-    font-weight: 500;
-}
+    #my-topbar-test-panel[data-mobile-view="detail"] .my-topbar-test-col-middle {
+        display: flex;
+    }
 
-/* 调整面板内部的滚动布局 */
-.my-topbar-test-settings-section {
-    padding-bottom: 20px;
-}
+    #my-topbar-test-panel[data-mobile-view="output"] .my-topbar-test-col-right {
+        display: flex;
+    }
 
+    .my-topbar-test-api-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .my-topbar-test-template-preset-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .my-topbar-test-template-preset-drawer {
+        flex: 1 1 auto;
+    }
+
+    .my-topbar-test-template-preset-actions,
+    .my-topbar-test-template-tools {
+        justify-content: flex-end;
+    }
+
+    .my-topbar-test-template-apply {
+        padding-right: 104px;
+    }
+
+    .my-topbar-test-action-dialog-overlay {
+        align-items: center;
+        justify-content: center;
+        overflow-y: auto;
+        padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));
+        box-sizing: border-box;
+    }
+
+    .my-topbar-test-action-dialog-card {
+        width: min(100%, 420px);
+        margin: 0;
+        max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px);
+        overflow-y: auto;
+    }
+
+    .my-topbar-test-reply-modal {
+        align-items: center;
+        justify-content: center;
+        overflow-y: auto;
+        padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));
+        box-sizing: border-box;
+    }
+
+    .my-topbar-test-reply-modal-card {
+        width: min(100%, 720px);
+        margin: 0;
+        max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px);
+        overflow-y: auto;
+    }
+
+    .my-topbar-test-reply-modal-actions {
+        flex-wrap: wrap;
+    }
+
+    .my-topbar-test-api-stop-field {
+        grid-column: auto;
+    }
+
+    .my-topbar-test-floating-window {
+        width: 72px;
+        height: 72px;
+    }
+
+    .my-topbar-test-floating-size-grid {
+        grid-template-columns: 1fr;
+    }
+}
