@@ -2606,7 +2606,6 @@
             // 检查用户是否已按下"停止优化"取消按钮
             if (seamlessCancelRequested) {
                 log('无感劫持：用户已取消，放弃替换，保留原始消息。');
-                seamlessOptimizedMessageIds.delete(lastIdx);
                 return;
             }
 
