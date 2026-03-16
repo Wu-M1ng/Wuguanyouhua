@@ -30,9 +30,11 @@
     font-weight: 800;
     line-height: 1;
     color: inherit;
+    /* 增加过渡缓冲，让停止旋转时更自然 */
+    transition: transform 0.2s ease;
 }
 
-#my-topbar-test-button.is-spinning {
+#my-topbar-test-button.is-spinning .my-topbar-test-button-letter {
     animation: my-topbar-spin 2s linear infinite;
     color: var(--SmartThemeQuoteColor, #00ffcc);
 }

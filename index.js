@@ -288,6 +288,8 @@
         skipForSession: false,
     };
     let templatePresetDrawerOpen = false;
+    // 已经过无感拦截优化的消息 index 集合，用于跳过 queueAutoTriggerFlow 的二次触发
+    const seamlessOptimizedMessageIds = new Set();
     let templateSortState = {
         timerId: 0,
         pointerId: null,
@@ -2456,6 +2458,23 @@
             if (autoTriggerState.isBusy) {
                 return;
             }
+
+            // === 无感劫持：若最后一条消息已被 MESSAGE_RECEIVED 钩子处理，跳过二次触发 ===
+            const settings = loadSettings();
+            if (settings.seamlessHijack) {
+                const latestContext = SillyTavern.getContext();
+                const chat = latestContext?.chat;
+                if (Array.isArray(chat) && chat.length > 0) {
+                    const lastIdx = chat.length - 1;
+                    if (seamlessOptimizedMessageIds.has(lastIdx)) {
+                        seamlessOptimizedMessageIds.delete(lastIdx);
+                        log('无感劫持已处理此消息，跳过自动触发二次请求。');
+                        return;
+                    }
+                }
+            }
+            // ========================================================================
+
             autoTriggerState.isBusy = true;
             autoTriggerState.stopRequested = false;
 
@@ -2494,6 +2513,88 @@
                 }
             }
         }, 0);
+    }
+
+    /**
+     * MESSAGE_RECEIVED 无感劫持钩子
+     * 在酒馆收到完整的 AI 消息后、渲染到屏幕前，根据插件模板进行优化并静默替换。
+     */
+    async function handleMessageReceivedForSeamless() {
+        const settings = loadSettings();
+        // 未开启无感劫持或未开启自动触发时，直接跳过
+        if (!settings.seamlessHijack || !isAutoTriggerEnabledForCurrentChat()) {
+            return;
+        }
+
+        const latestContext = SillyTavern.getContext();
+        const chat = latestContext?.chat;
+        if (!Array.isArray(chat) || chat.length === 0) {
+            return;
+        }
+
+        const lastIdx = chat.length - 1;
+        const lastMessage = chat[lastIdx];
+
+        // 只处理 AI 消息
+        if (!lastMessage || lastMessage.is_user) {
+            return;
+        }
+
+        // 防止对同一条消息重复处理
+        if (seamlessOptimizedMessageIds.has(lastIdx)) {
+            return;
+        }
+
+        const lastMessageText = String(lastMessage.mes ?? '').trim();
+        if (!lastMessageText) {
+            return;
+        }
+
+        log('无感劫持：开始处理消息 #' + lastIdx);
+        updateProcessingStatus(true);
+
+        try {
+            // 提取内容范围
+            const result = extractTextByRange(lastMessageText);
+            if (!result.ok) {
+                log('无感劫持：内容提取失败，跳过。');
+                return;
+            }
+
+            // 构建模板处理后的 Prompt
+            const promptText = buildOutputFromSelectedTemplates(result.text, settings);
+            if (!promptText.trim()) {
+                log('无感劫持：Prompt 为空，跳过。');
+                return;
+            }
+
+            // 调用插件的二次优化 API
+            const replyText = await requestReplyText(promptText);
+            if (!String(replyText ?? '').trim()) {
+                log('无感劫持：优化 API 未返回内容，跳过。');
+                return;
+            }
+
+            // 静默替换消息并刷新显示
+            const chatIdBefore = getCurrentChatIdValue();
+            const didReplace = await applyReplyReplacement({
+                replyText,
+                chatId: chatIdBefore,
+                source: 'auto',
+                closeModal: false,
+                silent: true,
+            });
+
+            if (didReplace) {
+                // 记录已处理的消息 index，用于 queueAutoTriggerFlow 的跳过逻辑
+                seamlessOptimizedMessageIds.add(lastIdx);
+                log('无感劫持：消息 #' + lastIdx + ' 已静默替换完成。');
+            }
+        } catch (error) {
+            console.error(`[${MODULE_NAME}] 无感劫持失败`, error);
+        } finally {
+            updateProcessingStatus(false);
+        }
     }
 
     function handleGenerationEnded() {
@@ -4367,6 +4468,13 @@
                                            type="checkbox">
                                     <span class="my-topbar-test-keep-tags-text">跳过确认</span>
                                 </label>
+
+                                <label for="my-topbar-test-seamless-hijack" class="my-topbar-test-keep-tags-row">
+                                    <input id="my-topbar-test-seamless-hijack"
+                                           class="my-topbar-test-keep-tags-checkbox"
+                                           type="checkbox">
+                                    <span class="my-topbar-test-keep-tags-text">无感优化</span>
+                                </label>
                             </div>
 
                             <div class="my-topbar-test-capture-send-actions">
@@ -5350,6 +5458,10 @@
         eventSource.on(event_types.GENERATION_STOPPED, handleGenerationStopped);
         eventSource.off?.(event_types.GENERATION_ENDED, handleGenerationEnded);
         eventSource.on(event_types.GENERATION_ENDED, handleGenerationEnded);
+
+        // 无感劫持：在 AI 消息到达后立即拦截并优化
+        eventSource.off?.(event_types.MESSAGE_RECEIVED, handleMessageReceivedForSeamless);
+        eventSource.on(event_types.MESSAGE_RECEIVED, handleMessageReceivedForSeamless);
 
         if (!initialized) {
             initialized = true;
