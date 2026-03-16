@@ -276,20 +276,13 @@
         feedbackText: '',
     };
 
-    let autoTriggerState = {
-        enabledChatId: '',
-        isBusy: false,
-        requestId: 0,
-        stopRequested: false,
-        stoppedByUser: false,
-        pendingTimerId: 0,
-    };
     let templateDeleteConfirmState = {
         skipForSession: false,
     };
     let templatePresetDrawerOpen = false;
     // 已经过无感拦截优化的消息 index 集合，用于跳过 queueAutoTriggerFlow 的二次触发
     const seamlessOptimizedMessageIds = new Set();
+    let seamlessAbortController = null;
     let templateSortState = {
         timerId: 0,
         pointerId: null,
@@ -778,18 +771,9 @@
         const $button = $(SELECTORS.button);
         if (isProcessing) {
             $status.css('display', 'inline-flex');
-            $button.addClass('is-spinning');
         } else {
             $status.hide();
-            $button.removeClass('is-spinning');
         }
-    }
-
-    function isAutoFlowActive() {
-        const isAutoConfirmVisible = $(SELECTORS.replyModal).is(':visible')
-            && String(replyModalState.source ?? '') === 'auto';
-
-        return autoTriggerState.isBusy || Boolean(autoTriggerState.pendingTimerId) || isAutoConfirmVisible;
     }
 
     function getFloatingWindowConfig() {
@@ -2495,6 +2479,8 @@
                     return;
                 }
 
+                seamlessOptimizedMessageIds.add(lastIdx);
+
                 await runReplyRequestFlow(outputText, {
                     source: 'auto',
                     chatId: chatIdBefore,
@@ -2518,11 +2504,12 @@
     /**
      * MESSAGE_RECEIVED 无感劫持钩子
      * 在酒馆收到完整的 AI 消息后、渲染到屏幕前，根据插件模板进行优化并静默替换。
+     * 现在不再依赖自动触发开关，独立工作。
      */
     async function handleMessageReceivedForSeamless() {
         const settings = loadSettings();
-        // 未开启无感劫持或未开启自动触发时，直接跳过
-        if (!settings.seamlessHijack || !isAutoTriggerEnabledForCurrentChat()) {
+        // 未开启无感劫持时直接跳过（不再强制依赖自动触发开关）
+        if (!settings.seamlessHijack) {
             return;
         }
 
@@ -2535,12 +2522,10 @@
         const lastIdx = chat.length - 1;
         const lastMessage = chat[lastIdx];
 
-        // 只处理 AI 消息
         if (!lastMessage || lastMessage.is_user) {
             return;
         }
 
-        // 防止对同一条消息重复处理
         if (seamlessOptimizedMessageIds.has(lastIdx)) {
             return;
         }
@@ -2550,24 +2535,30 @@
             return;
         }
 
-        // === 关键修复：提前标记，确保 queueAutoTriggerFlow 的同步检查能命中 ===
-        // （queueAutoTriggerFlow 的 setTimeout(0) 会在当前事件循环结束后执行，
-        //   但早于本函数内的 await requestReplyText，所以必须先占位）
+        // 提前标记，确保 queueAutoTriggerFlow 的同步检查能命中
         seamlessOptimizedMessageIds.add(lastIdx);
+
+        // 备份原始消息文本，取消时用于还原
+        const originalMessageText = lastMessageText;
+
+        // 中止旧请求并创建新 AbortController
+        if (seamlessAbortController) {
+            seamlessAbortController.abort();
+        }
+        const abortController = new AbortController();
+        seamlessAbortController = abortController;
 
         log('无感劫持：开始处理消息 #' + lastIdx);
         updateProcessingStatus(true);
 
         try {
-            // 提取内容范围
             const result = extractTextByRange(lastMessageText);
             if (!result.ok) {
                 log('无感劫持：内容提取失败，跳过。');
-                seamlessOptimizedMessageIds.delete(lastIdx); // 还原标记，让正常流程接管
+                seamlessOptimizedMessageIds.delete(lastIdx);
                 return;
             }
 
-            // 构建模板处理后的 Prompt
             const promptText = buildOutputFromSelectedTemplates(result.text, settings);
             if (!promptText.trim()) {
                 log('无感劫持：Prompt 为空，跳过。');
@@ -2575,15 +2566,32 @@
                 return;
             }
 
-            // 调用插件的二次优化 API
             const replyText = await requestReplyText(promptText);
+
+            // 检查是否在 API 等待期间被取消
+            if (abortController.signal.aborted) {
+                log('无感劫持：请求已被用户取消，还原原始消息。');
+                const latestContext2 = SillyTavern.getContext();
+                const chat2 = latestContext2?.chat;
+                if (Array.isArray(chat2) && chat2[lastIdx]) {
+                    chat2[lastIdx].mes = originalMessageText;
+                    if (typeof latestContext2.updateMessageBlock === 'function') {
+                        latestContext2.updateMessageBlock(lastIdx, chat2[lastIdx], { rerenderMessage: true });
+                    }
+                    if (typeof latestContext2.saveChat === 'function') {
+                        await latestContext2.saveChat();
+                    }
+                }
+                seamlessOptimizedMessageIds.delete(lastIdx);
+                return;
+            }
+
             if (!String(replyText ?? '').trim()) {
                 log('无感劫持：优化 API 未返回内容，跳过。');
                 seamlessOptimizedMessageIds.delete(lastIdx);
                 return;
             }
 
-            // 静默替换消息并刷新显示
             const chatIdBefore = getCurrentChatIdValue();
             const didReplace = await applyReplyReplacement({
                 replyText,
@@ -2601,53 +2609,14 @@
             }
         } catch (error) {
             console.error(`[${MODULE_NAME}] 无感劫持失败`, error);
-            // 出错时还原标记，以免永久阻断正常流程
             seamlessOptimizedMessageIds.delete(lastIdx);
         } finally {
+            if (seamlessAbortController === abortController) {
+                seamlessAbortController = null;
+            }
             updateProcessingStatus(false);
         }
     }
-
-
-    function handleGenerationEnded() {
-        queueAutoTriggerFlow();
-    }
-
-    // 显示/隐藏全屏面板
-    function togglePanel() {
-        const $panel = $(SELECTORS.panel);
-        const willShow = !$panel.is(':visible');
-
-        if (willShow) {
-            if (isMobileLayout()) {
-                setMobilePanelView('menu');
-            } else {
-                syncMobileTabsUi();
-            }
-        }
-
-        $panel.fadeToggle(200);
-    }
-
-    function showPanel() {
-        const $panel = $(SELECTORS.panel);
-        if (!$panel.length || $panel.is(':visible')) {
-            return;
-        }
-
-        $panel.stop(true, true).fadeIn(200);
-    }
-
-    function hidePanel() {
-        $(SELECTORS.panel).fadeOut(200);
-    }
-
-    function openPanelDetail(switchTab) {
-        showPanel();
-        switchTab();
-
-        if (isMobileLayout()) {
-            setMobilePanelView('detail');
         } else {
             syncMobileTabsUi();
         }
@@ -4467,12 +4436,7 @@
                             </div>
 
                             <div class="my-topbar-test-capture-send-options">
-                                <label for="my-topbar-test-auto-trigger-enabled" class="my-topbar-test-keep-tags-row">
-                                    <input id="my-topbar-test-auto-trigger-enabled"
-                                           class="my-topbar-test-keep-tags-checkbox"
-                                           type="checkbox">
-                                    <span class="my-topbar-test-keep-tags-text">开启自动触发</span>
-                                </label>
+
 
                                 <label for="my-topbar-test-skip-reply-confirm" class="my-topbar-test-keep-tags-row">
                                     <input id="my-topbar-test-skip-reply-confirm"
@@ -4750,6 +4714,22 @@
         }
     }
 
+    function updateProcessingStatus(isProcessing) {
+        const $cancelBtn = $('#my-topbar-test-seamless-cancel-btn');
+        if (isProcessing) {
+            $cancelBtn.css('display', 'flex');
+        } else {
+            $cancelBtn.hide();
+        }
+    }
+
+    function handleSeamlessCancelClick() {
+        if (seamlessAbortController) {
+            seamlessAbortController.abort();
+        }
+        updateProcessingStatus(false);
+    }
+
     function mountButton() {
         const $topBar = $(SELECTORS.topBar);
 
@@ -4760,6 +4740,7 @@
 
         $(SELECTORS.button).remove();
         $('#my-topbar-test-status-container').remove();
+        $('#my-topbar-test-seamless-cancel-btn').remove();
 
         const $button = $(`
             <div id="my-topbar-test-button"
@@ -4773,21 +4754,30 @@
             </div>
         `);
 
-        const $status = $(`
-            <div id="my-topbar-test-status-container" style="display: none; align-items: center; margin-left: 8px; font-size: 12px; opacity: 0.8; pointer-events: none; user-select: none;">
-                <i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 4px;"></i>
-                <span>优化中...</span>
+        // 取消无感优化的按钮，仅在优化中时显示
+        const $cancelBtn = $(`
+            <div id="my-topbar-test-seamless-cancel-btn"
+                 style="display: none; align-items: center; margin-left: 6px; cursor: pointer;"
+                 title="取消优化并还原">
+                <i class="fa-solid fa-xmark" style="font-size: 14px; color: #ff5c5c;"></i>
             </div>
         `);
 
         const $anchor = $(SELECTORS.anchor);
         if ($anchor.length) {
             $anchor.after($button);
-            $button.after($status);
+            $button.after($cancelBtn);
         } else {
             $topBar.append($button);
-            $topBar.append($status);
+            $topBar.append($cancelBtn);
         }
+
+        // 绑定取消按钮点击事件
+        $cancelBtn.on('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleSeamlessCancelClick();
+        });
     }
 
     function bindEvents() {
@@ -4898,12 +4888,6 @@
                 if (isMobileLayout()) {
                     setMobilePanelView('detail');
                 }
-            });
-
-        $(document)
-            .off('change.myTopbarTestAutoTriggerEnabled', SELECTORS.autoTriggerEnabledCheckbox)
-            .on('change.myTopbarTestAutoTriggerEnabled', SELECTORS.autoTriggerEnabledCheckbox, function () {
-                handleAutoTriggerEnabledCheckboxChanged();
             });
 
         $(document)
