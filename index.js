@@ -4683,6 +4683,28 @@
         updateProcessingStatus(false);
     }
 
+    function showPanel() {
+        $(SELECTORS.panel).show();
+        if (isMobileLayout()) {
+            setMobilePanelView('detail');
+        } else {
+            syncMobileTabsUi();
+        }
+    }
+
+    function hidePanel() {
+        $(SELECTORS.panel).hide();
+    }
+
+    function togglePanel() {
+        const $panel = $(SELECTORS.panel);
+        if ($panel.is(':visible')) {
+            hidePanel();
+        } else {
+            showPanel();
+        }
+    }
+
     function mountButton() {
         const $topBar = $(SELECTORS.topBar);
 
