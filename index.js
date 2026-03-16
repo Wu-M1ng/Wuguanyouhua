@@ -2550,6 +2550,11 @@
             return;
         }
 
+        // === 关键修复：提前标记，确保 queueAutoTriggerFlow 的同步检查能命中 ===
+        // （queueAutoTriggerFlow 的 setTimeout(0) 会在当前事件循环结束后执行，
+        //   但早于本函数内的 await requestReplyText，所以必须先占位）
+        seamlessOptimizedMessageIds.add(lastIdx);
+
         log('无感劫持：开始处理消息 #' + lastIdx);
         updateProcessingStatus(true);
 
@@ -2558,6 +2563,7 @@
             const result = extractTextByRange(lastMessageText);
             if (!result.ok) {
                 log('无感劫持：内容提取失败，跳过。');
+                seamlessOptimizedMessageIds.delete(lastIdx); // 还原标记，让正常流程接管
                 return;
             }
 
@@ -2565,6 +2571,7 @@
             const promptText = buildOutputFromSelectedTemplates(result.text, settings);
             if (!promptText.trim()) {
                 log('无感劫持：Prompt 为空，跳过。');
+                seamlessOptimizedMessageIds.delete(lastIdx);
                 return;
             }
 
@@ -2572,6 +2579,7 @@
             const replyText = await requestReplyText(promptText);
             if (!String(replyText ?? '').trim()) {
                 log('无感劫持：优化 API 未返回内容，跳过。');
+                seamlessOptimizedMessageIds.delete(lastIdx);
                 return;
             }
 
@@ -2585,17 +2593,21 @@
                 silent: true,
             });
 
-            if (didReplace) {
-                // 记录已处理的消息 index，用于 queueAutoTriggerFlow 的跳过逻辑
-                seamlessOptimizedMessageIds.add(lastIdx);
+            if (!didReplace) {
+                seamlessOptimizedMessageIds.delete(lastIdx);
+                log('无感劫持：替换失败，标记已还原。');
+            } else {
                 log('无感劫持：消息 #' + lastIdx + ' 已静默替换完成。');
             }
         } catch (error) {
             console.error(`[${MODULE_NAME}] 无感劫持失败`, error);
+            // 出错时还原标记，以免永久阻断正常流程
+            seamlessOptimizedMessageIds.delete(lastIdx);
         } finally {
             updateProcessingStatus(false);
         }
     }
+
 
     function handleGenerationEnded() {
         queueAutoTriggerFlow();
