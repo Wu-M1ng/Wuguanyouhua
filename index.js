@@ -616,6 +616,16 @@
         return Boolean(currentChatId && autoTriggerState.enabledChatId === currentChatId);
     }
 
+    /**
+     * 无感劫持的独立开关检查：只依赖 settings.seamlessHijack，不依赖自动触发状态。
+     * 这样即使用户关闭了“自动触发”，无感劫持仍然可以独立工作。
+     */
+    function isSeamlessHijackEnabledForCurrentChat() {
+        const currentChatId = getCurrentChatIdValue();
+        if (!currentChatId) return false;
+        return Boolean(loadSettings().seamlessHijack);
+    }
+
     function saveChatMetadata() {
         try {
             saveMetadataDebounced();
@@ -2532,8 +2542,8 @@
      */
     async function handleMessageReceivedForSeamless() {
         const settings = loadSettings();
-        // 未开启无感劫持或未开启自动触发时，直接跳过
-        if (!settings.seamlessHijack || !isAutoTriggerEnabledForCurrentChat()) {
+        // 无感劫持使用独立的开关，不依赖自动触发状态
+        if (!isSeamlessHijackEnabledForCurrentChat()) {
             return;
         }
 
@@ -2624,6 +2634,14 @@
                 log('无感劫持：替换失败，标记已还原。');
             } else {
                 log('无感劫持：消息 #' + lastIdx + ' 已静默替换完成。');
+                // 替换成功后，主动撤销任何由 GENERATION_ENDED 排队的自动触发计时器
+                // （applyReplyReplacement 返回后可能中间有事件再次触发 GENERATION_ENDED，导致自动触发在存在经厂内排队）
+                autoTriggerState.requestId += 1;
+                if (autoTriggerState.pendingTimerId) {
+                    window.clearTimeout(autoTriggerState.pendingTimerId);
+                    autoTriggerState.pendingTimerId = 0;
+                    log('无感劫持：已撤销替换后排队的自动触发。');
+                }
             }
         } catch (error) {
             console.error(`[${MODULE_NAME}] 无感劫持失败`, error);
