@@ -647,11 +647,11 @@
     function readAutoTriggerEnabledFromCurrentChat() {
         const currentChatId = getCurrentChatIdValue();
         if (!currentChatId) {
-            return true;
+            return false;
         }
 
         const metadataEntry = getCurrentChatMetadataEntry(false);
-        return metadataEntry?.autoTriggerEnabled ?? true;
+        return metadataEntry?.autoTriggerEnabled ?? false;
     }
 
     function syncAutoTriggerStateFromCurrentChat() {
